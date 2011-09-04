@@ -1,30 +1,22 @@
 package com.shvid.klod.net;
 
+import java.util.concurrent.ThreadPoolExecutor;
+
 import org.apache.log4j.Logger;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 public class Locator extends ManagedServer {
-  
-  private final static Logger log = Logger.getLogger(Locator.class);
-  
-  protected void startServer(String bindHost, int bindPort, String serverDir) {
 
-    int threads = Integer.getInteger("klod.locator.threads", 2);
-    
-    
-    
+  private final static Logger log = Logger.getLogger(Locator.class);
+
+  @Override
+  protected ChannelPipelineFactory createPipelineFactory(ThreadPoolExecutor pipelineExecutor, ClientSocketChannelFactory clientFactory) {
+    return new LocatorPipelineFactory(pipelineExecutor, clientFactory);
   }
 
   public static void main(String[] args) {
-
-    System.out.println("Locator");
-    try {
-      new Locator().start("locator", args);
-    }
-    catch(Exception e) {
-      log.error("server fail", e);
-      System.exit(1);
-    }
-
+    launch(new Locator(), "locator", args);
   }
 
 }

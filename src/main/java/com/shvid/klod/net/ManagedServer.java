@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.net.ConnectException;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.URL;
@@ -19,18 +20,65 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.RollingFileAppender;
+import org.jboss.netty.bootstrap.ServerBootstrap;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
+import org.jboss.netty.handler.execution.OrderedMemoryAwareThreadPoolExecutor;
 
 public abstract class ManagedServer {
 
   private final static Logger log = Logger.getLogger(ManagedServer.class);
+
+  private Channel listenChannel;
+  private OrderedMemoryAwareThreadPoolExecutor pipelineExecutor;
+  private ChannelFactory factory;
+  private ClientSocketChannelFactory clientFactory;
+
+  protected abstract ChannelPipelineFactory createPipelineFactory(ThreadPoolExecutor pipelineExecutor, ClientSocketChannelFactory clientFactory);
   
-  protected abstract void startServer(String bindHost, int bindPort, String serverDir);
+  protected void startServer(String bindHost, int bindPort, int threads, String serverDir) {
+    
+    clientFactory =  new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
+    factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), threads);
+    ServerBootstrap bootstrap = new ServerBootstrap(factory);
+
+    // 200 threads max, Memory limitation: 1MB by channel, 1GB global, 100 ms of timeout
+    pipelineExecutor = new OrderedMemoryAwareThreadPoolExecutor(200, 1048576, 1073741824, 100, TimeUnit.MILLISECONDS, Executors.defaultThreadFactory());
+
+    bootstrap.setPipelineFactory(createPipelineFactory(pipelineExecutor, clientFactory));
+    bootstrap.setOption("child.tcpNoDelay", true);
+    bootstrap.setOption("child.keepAlive", true);
+    bootstrap.setOption("child.reuseAddress", true);
+    bootstrap.setOption("readWriteFair", true);
+
+    listenChannel = bootstrap.bind(new InetSocketAddress(bindHost, bindPort));
+    
+  }
   
+  public void join() {
+    listenChannel.getCloseFuture().awaitUninterruptibly();
+  }
+  
+  public void shutdown() {
+    log.info("Shutdown server");
+    listenChannel.close().awaitUninterruptibly();
+    pipelineExecutor.shutdownNow();
+    factory.releaseExternalResources();
+    clientFactory.releaseExternalResources();
+  }
+
   public void start(String server, String[] args) throws Exception {
 
     Properties klodProperties = readFileFromClassPath(Constants.KLOD_PROPERTIES);
@@ -54,11 +102,14 @@ public abstract class ManagedServer {
       
     String portKey = "klod." + server + ".port";
     String dirKey = "klod." + server + ".dir";
-      
+    String threadsKey = "klod." + server + ".threads";
+    
     Integer port = Integer.getInteger(portKey);
     if (port == null) {
       throw new IllegalArgumentException("property '" + portKey + "' is empty");
     }
+    
+    int threads = Integer.getInteger(threadsKey, Runtime.getRuntime().availableProcessors() * 2 + 1);
       
     String bindHost = System.getProperty("klod.hostname");
     if (bindHost == null) {
@@ -88,7 +139,7 @@ public abstract class ManagedServer {
     String maxFileSizeKey = "klod." + server + ".log.max-file-size";
 
     String fileLog = serverDirFile.getAbsolutePath()+ File.separatorChar + server + ".log";
-    RollingFileAppender rollingAppender = new RollingFileAppender(new PatternLayout(System.getProperty(patternKey, "%m%n")), fileLog, true); 
+    RollingFileAppender rollingAppender = new RollingFileAppender(new PatternLayout(System.getProperty(patternKey, "")), fileLog, true); 
     rollingAppender.setThreshold(Level.toLevel(System.getProperty(levelKey, "ALL")));
     rollingAppender.setMaxBackupIndex(Integer.getInteger(maxBackupIndexKey, 20));
     rollingAppender.setMaxFileSize(System.getProperty(maxFileSizeKey, "10MB")); 
@@ -105,7 +156,8 @@ public abstract class ManagedServer {
       processId = processId.substring(0, idx);
     }
     
-    String filePid = serverDirFile.getAbsolutePath()+ File.separatorChar + server + ".pid";
+    File filePid = new File(serverDirFile.getAbsolutePath()+ File.separatorChar + server + ".pid");
+    filePid.deleteOnExit();
     FileOutputStream fout = new FileOutputStream(filePid);
     try {
       fout.write(processId.getBytes());
@@ -113,8 +165,8 @@ public abstract class ManagedServer {
     finally {
       fout.close();
     }
-    
-    startServer(bindHost, bindPort, serverDir);
+
+    startServer(bindHost, bindPort, threads, serverDir);
   }
 
   private static String getFormattedProperties() {
@@ -202,6 +254,27 @@ public abstract class ManagedServer {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+  
+  public static void launch(final ManagedServer server, String serverName, String[] args) {
+    
+    try {
+      server.start(serverName, args);
+    }
+    catch(Exception e) {
+      log.error("server fail", e);
+      System.exit(1);
+    }
+
+    Runtime.getRuntime().addShutdownHook(new Thread() {
+      @Override
+      public void run() {
+        server.shutdown();
+      }
+    });
+
+    server.join();
+
   }
   
 }

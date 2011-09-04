@@ -1,26 +1,22 @@
 package com.shvid.klod.net;
 
+import java.util.concurrent.ThreadPoolExecutor;
+
 import org.apache.log4j.Logger;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 public class Agent extends ManagedServer {
 
   private final static Logger log = Logger.getLogger(Agent.class);
   
-  protected void startServer(String bindHost, int bindPort, String serverDir) {
-    
+  @Override
+  protected ChannelPipelineFactory createPipelineFactory(ThreadPoolExecutor pipelineExecutor, ClientSocketChannelFactory clientFactory) {
+    return null;
   }
-  
+
   public static void main(String[] args) {
-    
-    System.out.println("Agent");
-    try {
-      new Agent().start("agent", args);
-    }
-    catch(Exception e) {
-      log.error("server fail", e);
-      System.exit(1);
-    }
-    
+    launch(new Agent(), "agent", args);
   }
   
 }

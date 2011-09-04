@@ -1,27 +1,22 @@
 package com.shvid.klod.net;
 
+import java.util.concurrent.ThreadPoolExecutor;
+
 import org.apache.log4j.Logger;
+import org.jboss.netty.channel.ChannelPipelineFactory;
+import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 
 public class CacheServer extends ManagedServer {
 
   private final static Logger log = Logger.getLogger(CacheServer.class);
   
-  protected void startServer(String bindHost, int bindPort, String serverDir) {
-    
+  @Override
+  protected ChannelPipelineFactory createPipelineFactory(ThreadPoolExecutor pipelineExecutor, ClientSocketChannelFactory clientFactory) {
+    return null;
   }
 
-  
   public static void main(String[] args) {
-    
-    System.out.println("CacheServer");
-    try {
-      new CacheServer().start("cacheserver", args);
-    }
-    catch(Exception e) {
-      log.error("server fail", e);
-      System.exit(1);
-    }
-    
+    launch(new CacheServer(), "cacheserver", args);
   }
   
 }
