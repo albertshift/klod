@@ -2,7 +2,7 @@ package com.shvid.klod.io.kos;
 
 import java.io.IOException;
 
-public class ReflectionInstantiator implements KoInstantiator {
+public class ReflectionKoInstantiator implements KoInstantiator {
 
   @Override
   public Object instantiateKo(Class<?> clazz) throws IOException {

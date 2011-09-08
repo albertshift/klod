@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class BasicKosContext implements KosContext {
 
-  private final static KoInstantiator REFLECTION_INSTANTIATOR = new ReflectionInstantiator();
+  private final static KoInstantiator REFLECTION_INSTANTIATOR = new ReflectionKoInstantiator();
   
   private Map<Integer, KoInstantiator> instantiators = new HashMap<Integer, KoInstantiator>();
   private Map<Integer, KoSerializer> serializers = new HashMap<Integer, KoSerializer>();

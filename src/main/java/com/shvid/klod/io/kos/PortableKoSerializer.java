@@ -2,7 +2,7 @@ package com.shvid.klod.io.kos;
 
 import java.io.IOException;
 
-public class PortableSerializer implements KoSerializer {
+public class PortableKoSerializer implements KoSerializer {
 
   @Override
   public Object readKo(KosReader reader) throws IOException {
