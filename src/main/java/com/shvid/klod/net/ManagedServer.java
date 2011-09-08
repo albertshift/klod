@@ -100,7 +100,7 @@ public abstract class ManagedServer {
   }
 
   public void shutdown() {
-    log.info("Shutdown server");
+    log.info("Shutdown " + getName());
     listenChannel.close().awaitUninterruptibly();
     pipelineExecutor.shutdownNow();
     serverFactory.releaseExternalResources();
@@ -118,7 +118,6 @@ public abstract class ManagedServer {
     ChannelFuture locatorClientFuture = locatorClientBootstrap.connect(locator.getAddress());
     locatorClientFuture.awaitUninterruptibly();
     
-    //locatorClientFuture.getChannel().getCloseFuture().awaitUninterruptibly();
     
     System.out.println("locator connect = " + locatorClientFuture.isSuccess());
     

@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public interface KoWriter {
+/*
+ * Klod object serialization writer
+ */
+public interface KosWriter {
 
   public void writeString(int id, String value) throws IOException;
 
@@ -34,6 +37,6 @@ public interface KoWriter {
   
   public void writeObjectArray(int id, Object[] value) throws IOException;
  
-  public KoContext getContext();
+  public KosContext getContext();
   
 }

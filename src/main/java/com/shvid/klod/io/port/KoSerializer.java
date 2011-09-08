@@ -2,10 +2,20 @@ package com.shvid.klod.io.port;
 
 import java.io.IOException;
 
+/*
+ * Klod Object Serializer
+ */
 public interface KoSerializer {
 
-  public Object readKo(KoReader reader) throws IOException;
+  /*
+   * read Klod Object
+   */
+  public Object readKo(KosReader reader) throws IOException;
   
-  public void writeKo(KoWriter writer, Object value) throws IOException;
+  
+  /*
+   * write Klod Object 
+   */
+  public void writeKo(KosWriter writer, Object value) throws IOException;
   
 }

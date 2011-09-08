@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Date;
 
-public interface KoReader {
+/*
+ * Klod object serialization reader
+ */
+public interface KosReader {
 
   public String readString(int id) throws IOException;
 
@@ -34,7 +37,7 @@ public interface KoReader {
 
   public Object[] readObjectArray(int id) throws IOException;
   
-  public KoContext getContext();
+  public KosContext getContext();
   
   public int getOpcode();
   

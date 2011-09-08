@@ -1,5 +1,8 @@
 package com.shvid.klod.io.port;
 
+/*
+ * Klod Object Opcode
+ */
 public enum KoOpcode {
   
   NULL(0),
