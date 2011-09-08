@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) Alex Shvid. All Rights Reserved. 2011
+ */
+
 package com.shvid.klod.net;
 
 import java.util.concurrent.ThreadPoolExecutor;
