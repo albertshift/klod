@@ -21,6 +21,7 @@ public enum KoOpcode {
   
   private int opcode;
   
+  public static final int SYSTEM_OPCODE = 100;
   public static final int USER_OPCODE = 1000;
   
   KoOpcode(int opcode) {

@@ -57,7 +57,7 @@ public abstract class ManagedServer {
   private ChannelFactory serverFactory;
   private ClientSocketChannelFactory clientFactory;
 
-  protected abstract String getName();
+  protected abstract MemberRole serverRole();
   protected abstract ChannelPipelineFactory createPipelineFactory(ThreadPoolExecutor pipelineExecutor, ClientSocketChannelFactory clientFactory);
 
   protected void startServer(String bindHost, int bindPort, int threads, String serverDir) {
@@ -100,7 +100,7 @@ public abstract class ManagedServer {
   }
 
   public void shutdown() {
-    log.info("Shutdown " + getName());
+    log.info("Shutdown " + serverRole().getRole());
     listenChannel.close().awaitUninterruptibly();
     pipelineExecutor.shutdownNow();
     serverFactory.releaseExternalResources();
@@ -147,9 +147,9 @@ public abstract class ManagedServer {
       System.setProperty("user.dir", binDir);
     }
 
-    String portKey = "klod." + getName() + ".start-port";
-    String dirKey = "klod." + getName() + ".dir-prefix";
-    String threadsKey = "klod." + getName() + ".num-threads";
+    String portKey = "klod." + serverRole().getRole() + ".start-port";
+    String dirKey = "klod." + serverRole().getRole() + ".dir-prefix";
+    String threadsKey = "klod." + serverRole().getRole() + ".num-threads";
 
     Integer port = Integer.getInteger(portKey);
     if (port == null) {
@@ -180,12 +180,12 @@ public abstract class ManagedServer {
       }
     }
 
-    String patternKey = "klod." + getName() + ".log-pattern";
-    String levelKey = "klod." + getName() + ".log-level";
-    String maxBackupIndexKey = "klod." + getName() + ".log-max-backup-index";
-    String maxFileSizeKey = "klod." + getName() + ".log-max-file-size";
+    String patternKey = "klod." + serverRole().getRole() + ".log-pattern";
+    String levelKey = "klod." + serverRole().getRole() + ".log-level";
+    String maxBackupIndexKey = "klod." + serverRole().getRole() + ".log-max-backup-index";
+    String maxFileSizeKey = "klod." + serverRole().getRole() + ".log-max-file-size";
 
-    String fileLog = serverDirFile.getAbsolutePath() + File.separatorChar + getName() + ".log";
+    String fileLog = serverDirFile.getAbsolutePath() + File.separatorChar + serverRole().getRole() + ".log";
     RollingFileAppender rollingAppender = new RollingFileAppender(new PatternLayout(System.getProperty(patternKey, "")), fileLog, true);
     rollingAppender.setThreshold(Level.toLevel(System.getProperty(levelKey, "ALL")));
     rollingAppender.setMaxBackupIndex(Integer.getInteger(maxBackupIndexKey, 20));
@@ -195,12 +195,12 @@ public abstract class ManagedServer {
     log.addAppender(rollingAppender);
 
     if (Boolean.TRUE.equals(Boolean.getBoolean("klod.show-banner"))) {
-      log.info("Startup Banner for " + getName() + " at " + new Date() + '\n' + getFormattedProperties());
+      log.info("Startup Banner for " + serverRole().getRole() + " at " + new Date() + '\n' + getFormattedProperties());
     }
     else {
-      log.info("Server " + getName() + " started at " + new Date());
+      log.info("Server " + serverRole().getRole() + " started at " + new Date());
     }
-    log.info("Bind " + getName() + " at " + bindHost + "[" + bindPort + "]");
+    log.info("Bind " + serverRole().getRole() + " at " + bindHost + "[" + bindPort + "]");
 
     String processId = ManagementFactory.getRuntimeMXBean().getName();
     int idx = processId.indexOf('@');
@@ -208,7 +208,7 @@ public abstract class ManagedServer {
       processId = processId.substring(0, idx);
     }
 
-    File filePid = new File(serverDirFile.getAbsolutePath() + File.separatorChar + getName() + ".pid");
+    File filePid = new File(serverDirFile.getAbsolutePath() + File.separatorChar + serverRole().getRole() + ".pid");
     filePid.deleteOnExit();
     FileOutputStream fout = new FileOutputStream(filePid);
     try {

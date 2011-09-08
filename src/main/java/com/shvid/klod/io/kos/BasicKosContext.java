@@ -1,22 +1,21 @@
 package com.shvid.klod.io.kos;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
-public class BasicKosContext implements KosContext {
 
-  private final static KoInstantiator REFLECTION_INSTANTIATOR = new ReflectionKoInstantiator();
-  
-  private Map<Integer, KoInstantiator> instantiators = new HashMap<Integer, KoInstantiator>();
-  private Map<Integer, KoSerializer> serializers = new HashMap<Integer, KoSerializer>();
-  private Map<Integer, Class<?>> classes = new HashMap<Integer, Class<?>>();
+public class BasicKosContext extends SystemKosContext {
+
+  private Map<Integer, KoInstantiator> instantiators = new ConcurrentHashMap<Integer, KoInstantiator>();
+  private Map<Integer, KoSerializer> serializers = new ConcurrentHashMap<Integer, KoSerializer>();
+  private Map<Integer, Class<?>> classes = new ConcurrentHashMap<Integer, Class<?>>();
   
   public void registerPortable(int opcode, Class<?> clazz) {
     registerPortable(opcode, clazz, REFLECTION_INSTANTIATOR);
   }
   
   public void registerPortable(int opcode, Class<?> clazz, KoInstantiator instantiator) {
-    if (!KosPortable.class.isAssignableFrom(clazz)) {
+    if (!KoPortable.class.isAssignableFrom(clazz)) {
       throw new IllegalArgumentException("class does not implements KoPortable interface");
     }
     instantiators.put(opcode, instantiator);
@@ -36,17 +35,38 @@ public class BasicKosContext implements KosContext {
 
   @Override
   public KoInstantiator getInstantiator(int opcode) {
-    return instantiators.get(opcode);
+    KoInstantiator instantiator = super.getInstantiator(opcode);
+    if (instantiator != null) {
+      return instantiator;
+    }
+    if (opcode >= KoOpcode.USER_OPCODE) {
+      return instantiators.get(opcode);
+    }
+    return null;
   }
 
   @Override
   public Class<?> getClass(int opcode) {
-    return classes.get(opcode);
+    Class<?> clazz = super.getClass(opcode);
+    if (clazz != null) {
+      return clazz;
+    }
+    if (opcode >= KoOpcode.USER_OPCODE) {
+      return classes.get(opcode);
+    }
+    return null;
   }
   
   @Override
   public KoSerializer getSerializer(int opcode) {
-    return serializers.get(opcode);
+    KoSerializer serializer = super.getSerializer(opcode);
+    if (serializer != null) {
+      return serializer;
+    }
+    if (opcode >= KoOpcode.USER_OPCODE) {
+      return serializers.get(opcode);
+    }
+    return null;
   }
   
 }

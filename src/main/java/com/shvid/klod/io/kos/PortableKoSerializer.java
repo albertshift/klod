@@ -6,7 +6,7 @@ public class PortableKoSerializer implements KoSerializer {
 
   @Override
   public Object readKo(KosReader reader) throws IOException {
-    KosContext context = reader.getContext();
+    KosContext context = reader.getKosContext();
     int opcode = reader.getOpcode();
     if (opcode < KoOpcode.USER_OPCODE) {
       

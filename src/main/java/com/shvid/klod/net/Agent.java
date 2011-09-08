@@ -15,8 +15,8 @@ public class Agent extends ManagedServer {
   private final static Logger log = Logger.getLogger(Agent.class);
   
   @Override
-  protected String getName() {
-    return "agent";
+  protected MemberRole serverRole() {
+    return MemberRole.AGENT;
   }
   
   @Override

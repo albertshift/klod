@@ -15,8 +15,8 @@ public class Locator extends ManagedServer {
   private final static Logger log = Logger.getLogger(Locator.class);
 
   @Override
-  protected String getName() {
-    return "locator";
+  protected MemberRole serverRole() {
+    return MemberRole.LOCATOR;
   }
   
   @Override

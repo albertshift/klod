@@ -15,8 +15,8 @@ public class LoadBalancer extends ManagedServer {
   private final static Logger log = Logger.getLogger(LoadBalancer.class);
   
   @Override
-  protected String getName() {
-    return "loadbalancer";
+  protected MemberRole serverRole() {
+    return MemberRole.LOAD_BALANCER;
   }
   
   @Override

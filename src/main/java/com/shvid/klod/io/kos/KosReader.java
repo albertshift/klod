@@ -37,7 +37,7 @@ public interface KosReader {
 
   public Object[] readObjectArray(int id) throws IOException;
   
-  public KosContext getContext();
+  public KosContext getKosContext();
   
   public int getOpcode();
   

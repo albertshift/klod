@@ -2,7 +2,10 @@ package com.shvid.klod.io.kos;
 
 import java.io.IOException;
 
-public interface KosPortable {
+/*
+ * Klod object portable 
+ */
+public interface KoPortable {
 
   public void readFrom(KosReader reader) throws IOException;
   

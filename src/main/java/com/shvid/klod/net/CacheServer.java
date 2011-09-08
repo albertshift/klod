@@ -15,8 +15,8 @@ public class CacheServer extends ManagedServer {
   private final static Logger log = Logger.getLogger(CacheServer.class);
   
   @Override
-  protected String getName() {
-    return "cacheserver";
+  protected MemberRole serverRole() {
+    return MemberRole.CACHE_SERVER;
   }
   
   @Override
