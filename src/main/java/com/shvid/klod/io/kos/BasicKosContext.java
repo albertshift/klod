@@ -1,4 +1,4 @@
-package com.shvid.klod.io.port;
+package com.shvid.klod.io.kos;
 
 import java.util.HashMap;
 import java.util.Map;

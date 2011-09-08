@@ -1,4 +1,4 @@
-package com.shvid.klod.io.port;
+package com.shvid.klod.io.kos;
 
 /*
  * Klod object serialization (Kos) context
