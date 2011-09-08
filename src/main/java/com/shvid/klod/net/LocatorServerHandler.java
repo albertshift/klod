@@ -4,8 +4,6 @@
 
 package com.shvid.klod.net;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.log4j.Logger;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
@@ -25,12 +23,6 @@ public class LocatorServerHandler extends SimpleChannelHandler {
   
   private final ClientSocketChannelFactory clientFactory;
   
-  private static AtomicInteger connectionIdFactory = new AtomicInteger(10000);
-  
-  private Channel outboundChannel = null;
-  private int connectionId = 0;
-  private AtomicInteger num = new AtomicInteger(0);
-  
   public LocatorServerHandler(ClientSocketChannelFactory clientFactory) {
     super();
     this.clientFactory = clientFactory;
@@ -39,6 +31,7 @@ public class LocatorServerHandler extends SimpleChannelHandler {
   @Override
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
     ChannelBuffer msg = (ChannelBuffer) e.getMessage();
+    System.out.println("Locator Server: message from client " + msg);
   }
   
   @Override
@@ -50,9 +43,6 @@ public class LocatorServerHandler extends SimpleChannelHandler {
   public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
     log.error("Unexpected exception from downstream.", e.getCause());
     Channels.close(e.getChannel());
-    if (outboundChannel != null && outboundChannel.isConnected()) {
-      Channels.close(outboundChannel);
-    }
   }
   
   private static void closeOnFlush(Channel ch) {

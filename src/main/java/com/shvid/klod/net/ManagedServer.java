@@ -34,9 +34,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.RollingFileAppender;
+import org.jboss.netty.bootstrap.ClientBootstrap;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelFuture;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.socket.ClientSocketChannelFactory;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
@@ -52,7 +54,7 @@ public abstract class ManagedServer {
   protected List<LocatorAddress> locators;
   private Channel listenChannel;
   private OrderedMemoryAwareThreadPoolExecutor pipelineExecutor;
-  private ChannelFactory factory;
+  private ChannelFactory serverFactory;
   private ClientSocketChannelFactory clientFactory;
 
   protected abstract String getName();
@@ -61,20 +63,20 @@ public abstract class ManagedServer {
   protected void startServer(String bindHost, int bindPort, int threads, String serverDir) {
 
     clientFactory = new NioClientSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool());
-    factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), threads);
-    ServerBootstrap bootstrap = new ServerBootstrap(factory);
+    serverFactory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(), Executors.newCachedThreadPool(), threads);
+    ServerBootstrap serverBootstrap = new ServerBootstrap(serverFactory);
 
     // 200 threads max, Memory limitation: 1MB by channel, 1GB global, 100 ms of
     // timeout
     pipelineExecutor = new OrderedMemoryAwareThreadPoolExecutor(200, 1048576, 1073741824, 100, TimeUnit.MILLISECONDS, Executors.defaultThreadFactory());
 
-    bootstrap.setPipelineFactory(createPipelineFactory(pipelineExecutor, clientFactory));
-    bootstrap.setOption("child.tcpNoDelay", true);
-    bootstrap.setOption("child.keepAlive", true);
-    bootstrap.setOption("child.reuseAddress", true);
-    bootstrap.setOption("readWriteFair", true);
+    serverBootstrap.setPipelineFactory(createPipelineFactory(pipelineExecutor, clientFactory));
+    serverBootstrap.setOption("child.tcpNoDelay", true);
+    serverBootstrap.setOption("child.keepAlive", true);
+    serverBootstrap.setOption("child.reuseAddress", true);
+    serverBootstrap.setOption("readWriteFair", true);
 
-    listenChannel = bootstrap.bind(new InetSocketAddress(bindHost, bindPort));
+    listenChannel = serverBootstrap.bind(new InetSocketAddress(bindHost, bindPort));
 
   }
 
@@ -84,7 +86,7 @@ public abstract class ManagedServer {
     while(true) {
       LocatorAddress locator = rr.next();
       log.info("Connect to Locator " + locator);
-      if (connect(locator)) {
+      if (connect(locator, reconnectTime)) {
         break;
       }
       try {
@@ -101,19 +103,27 @@ public abstract class ManagedServer {
     log.info("Shutdown server");
     listenChannel.close().awaitUninterruptibly();
     pipelineExecutor.shutdownNow();
-    factory.releaseExternalResources();
+    serverFactory.releaseExternalResources();
     clientFactory.releaseExternalResources();
   }
 
-  public boolean connect(LocatorAddress locator) {
+  public boolean connect(LocatorAddress locator, int reconnectTime) {
     if (listenChannel.getLocalAddress().equals(locator.getAddress())) {
       return false;
     }
     
+    ClientBootstrap locatorClientBootstrap = new ClientBootstrap(clientFactory);
+    locatorClientBootstrap.setOption("connectTimeoutMillis", reconnectTime);
+    locatorClientBootstrap.getPipeline().addLast("handler", new LocatorClientHandler());
+    ChannelFuture locatorClientFuture = locatorClientBootstrap.connect(locator.getAddress());
+    locatorClientFuture.awaitUninterruptibly();
     
+    //locatorClientFuture.getChannel().getCloseFuture().awaitUninterruptibly();
     
-    return false;
-  }
+    System.out.println("locator connect = " + locatorClientFuture.isSuccess());
+    
+    return locatorClientFuture.isSuccess();
+ }
   
   public void start(String[] args) throws Exception {
     
