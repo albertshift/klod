@@ -11,12 +11,17 @@ public class CacheServer extends ManagedServer {
   private final static Logger log = Logger.getLogger(CacheServer.class);
   
   @Override
+  protected String getName() {
+    return "cacheserver";
+  }
+  
+  @Override
   protected ChannelPipelineFactory createPipelineFactory(ThreadPoolExecutor pipelineExecutor, ClientSocketChannelFactory clientFactory) {
     return null;
   }
 
   public static void main(String[] args) {
-    launch(new CacheServer(), "cacheserver", args);
+    launch(new CacheServer(), args);
   }
   
 }

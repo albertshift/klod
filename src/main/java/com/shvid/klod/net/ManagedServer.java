@@ -51,6 +51,7 @@ public abstract class ManagedServer {
   private ChannelFactory factory;
   private ClientSocketChannelFactory clientFactory;
 
+  protected abstract String getName();
   protected abstract ChannelPipelineFactory createPipelineFactory(ThreadPoolExecutor pipelineExecutor, ClientSocketChannelFactory clientFactory);
 
   protected void startServer(String bindHost, int bindPort, int threads, String serverDir) {
@@ -101,10 +102,16 @@ public abstract class ManagedServer {
   }
 
   public boolean connect(LocatorAddress locator) {
+    if (listenChannel.getLocalAddress().equals(locator.getAddress())) {
+      return false;
+    }
+    
+    
+    
     return false;
   }
   
-  public void start(String server, String[] args) throws Exception {
+  public void start(String[] args) throws Exception {
     
     Properties klodProperties = readFileFromClassPath("klod.properties");
     for (Map.Entry<Object, Object> entry : klodProperties.entrySet()) {
@@ -127,9 +134,9 @@ public abstract class ManagedServer {
       System.setProperty("user.dir", binDir);
     }
 
-    String portKey = "klod." + server + ".start-port";
-    String dirKey = "klod." + server + ".dir-prefix";
-    String threadsKey = "klod." + server + ".num-threads";
+    String portKey = "klod." + getName() + ".start-port";
+    String dirKey = "klod." + getName() + ".dir-prefix";
+    String threadsKey = "klod." + getName() + ".num-threads";
 
     Integer port = Integer.getInteger(portKey);
     if (port == null) {
@@ -160,12 +167,12 @@ public abstract class ManagedServer {
       }
     }
 
-    String patternKey = "klod." + server + ".log-pattern";
-    String levelKey = "klod." + server + ".log-level";
-    String maxBackupIndexKey = "klod." + server + ".log-max-backup-index";
-    String maxFileSizeKey = "klod." + server + ".log-max-file-size";
+    String patternKey = "klod." + getName() + ".log-pattern";
+    String levelKey = "klod." + getName() + ".log-level";
+    String maxBackupIndexKey = "klod." + getName() + ".log-max-backup-index";
+    String maxFileSizeKey = "klod." + getName() + ".log-max-file-size";
 
-    String fileLog = serverDirFile.getAbsolutePath() + File.separatorChar + server + ".log";
+    String fileLog = serverDirFile.getAbsolutePath() + File.separatorChar + getName() + ".log";
     RollingFileAppender rollingAppender = new RollingFileAppender(new PatternLayout(System.getProperty(patternKey, "")), fileLog, true);
     rollingAppender.setThreshold(Level.toLevel(System.getProperty(levelKey, "ALL")));
     rollingAppender.setMaxBackupIndex(Integer.getInteger(maxBackupIndexKey, 20));
@@ -175,12 +182,12 @@ public abstract class ManagedServer {
     log.addAppender(rollingAppender);
 
     if (Boolean.TRUE.equals(Boolean.getBoolean("klod.show-banner"))) {
-      log.info("Startup Banner for " + server + " at " + new Date() + '\n' + getFormattedProperties());
+      log.info("Startup Banner for " + getName() + " at " + new Date() + '\n' + getFormattedProperties());
     }
     else {
-      log.info("Server " + server + " started at " + new Date());
+      log.info("Server " + getName() + " started at " + new Date());
     }
-    log.info("Bind " + server + " at " + bindHost + "[" + bindPort + "]");
+    log.info("Bind " + getName() + " at " + bindHost + "[" + bindPort + "]");
 
     String processId = ManagementFactory.getRuntimeMXBean().getName();
     int idx = processId.indexOf('@');
@@ -188,7 +195,7 @@ public abstract class ManagedServer {
       processId = processId.substring(0, idx);
     }
 
-    File filePid = new File(serverDirFile.getAbsolutePath() + File.separatorChar + server + ".pid");
+    File filePid = new File(serverDirFile.getAbsolutePath() + File.separatorChar + getName() + ".pid");
     filePid.deleteOnExit();
     FileOutputStream fout = new FileOutputStream(filePid);
     try {
@@ -286,10 +293,10 @@ public abstract class ManagedServer {
     }
   }
 
-  public static void launch(final ManagedServer server, String serverName, String[] args) {
+  public static void launch(final ManagedServer server, String[] args) {
 
     try {
-      server.start(serverName, args);
+      server.start(args);
     } catch (Exception e) {
       log.error("server fail", e);
       System.exit(1);
@@ -319,6 +326,7 @@ public abstract class ManagedServer {
   }
 
   public static class LocatorAddress {
+    
     private String host;
     private int port;
 

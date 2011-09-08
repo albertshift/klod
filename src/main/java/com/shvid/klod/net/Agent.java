@@ -11,12 +11,17 @@ public class Agent extends ManagedServer {
   private final static Logger log = Logger.getLogger(Agent.class);
   
   @Override
+  protected String getName() {
+    return "agent";
+  }
+  
+  @Override
   protected ChannelPipelineFactory createPipelineFactory(ThreadPoolExecutor pipelineExecutor, ClientSocketChannelFactory clientFactory) {
     return null;
   }
 
   public static void main(String[] args) {
-    launch(new Agent(), "agent", args);
+    launch(new Agent(), args);
   }
   
 }

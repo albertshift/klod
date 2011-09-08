@@ -11,12 +11,17 @@ public class LoadBalancer extends ManagedServer {
   private final static Logger log = Logger.getLogger(LoadBalancer.class);
   
   @Override
+  protected String getName() {
+    return "loadbalancer";
+  }
+  
+  @Override
   protected ChannelPipelineFactory createPipelineFactory(ThreadPoolExecutor pipelineExecutor, ClientSocketChannelFactory clientFactory) {
     return null;
   }
 
   public static void main(String[] args) {
-    launch(new LoadBalancer(), "loadbalancer", args);
+    launch(new LoadBalancer(), args);
   }
   
 }
