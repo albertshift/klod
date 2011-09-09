@@ -126,7 +126,9 @@ public abstract class ManagedServer {
   
   public void start(String[] args) throws Exception {
     
-    Properties klodProperties = readFileFromClassPath("klod.properties");
+    Properties klodProperties = readPropertiesFromClassPath("klod.properties");
+    Properties klodOverrideProperties = readPropertiesFromClassPath("klod-override.properties");
+    klodProperties.putAll(klodOverrideProperties);
     for (Map.Entry<Object, Object> entry : klodProperties.entrySet()) {
       System.setProperty(entry.getKey().toString(), entry.getValue().toString());
     }
@@ -241,7 +243,7 @@ public abstract class ManagedServer {
     return props.toString();
   }
 
-  public static Properties readFileFromClassPath(String cfgFile) throws IOException {
+  public static Properties readPropertiesFromClassPath(String cfgFile) throws IOException {
     Properties cfg = new Properties();
     if (cfgFile == null) {
       return cfg;
@@ -253,7 +255,7 @@ public abstract class ManagedServer {
       url = ClassLoader.getSystemResource(cfgFile);
     }
     if (url == null) {
-      throw new FileNotFoundException("File not found in classpath " + cfgFile);
+      return cfg;
     }
     stream = url.openStream();
     try {

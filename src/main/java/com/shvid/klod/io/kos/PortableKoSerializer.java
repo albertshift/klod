@@ -8,15 +8,27 @@ public class PortableKoSerializer implements KoSerializer {
   public Object readKo(KosReader reader) throws IOException {
     KosContext context = reader.getKosContext();
     int opcode = reader.getOpcode();
-    if (opcode < KoOpcode.USER_OPCODE) {
-      
+    KoInstantiator instantiator = context.getInstantiator(opcode);
+    if (instantiator != null) {
+      Object obj = instantiator.instantiateKo(context.getClass(opcode));
+      if (obj instanceof KoPortable) {
+        KoPortable portableObject = (KoPortable) obj;
+        portableObject.readFrom(reader);
+        return portableObject;
+      }
+    }
+    KoSerializer serializer = context.getSerializer(opcode);
+    if (serializer != null) {
+      return serializer.readKo(reader);
     }
     return null;
   }
 
   @Override
   public void writeKo(KosWriter writer, Object value) throws IOException {
-    // TODO Auto-generated method stub
+    if (value == null) {
+      //writer.writeNull();
+    }
     
   }
 
